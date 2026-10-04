@@ -51,7 +51,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     },
                 )
             }
-            "echo" | "delete-user" | "put" | "get" | "delete" => {
+            "echo" => {
+                body = json!({"text": input("text: ")?});
+                ("POST", "/echo")
+            }
+            "delete-user" | "put" | "get" | "delete" => {
                 println!("This task is not implemented in the starting code yet.");
                 continue;
             }
