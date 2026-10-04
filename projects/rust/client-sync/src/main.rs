@@ -18,6 +18,28 @@ fn input(prompt: &str) -> io::Result<String> {
     }
     Ok(line.trim_end_matches(['\r', '\n']).to_owned())
 }
+fn multiline_input() -> io::Result<String> {
+    println!("Enter text. Type <<<END>>> on a line by itself to finish.");
+    println!("Type \\<<<END>>> if you want a literal <<<END>>> line.");
+    let mut text = String::new();
+    loop {
+        let mut line = String::new();
+        if io::stdin().read_line(&mut line)? == 0 {
+            return Err(io::ErrorKind::UnexpectedEof.into());
+        }
+        let line = line.trim_end_matches(['\r', '\n']);
+        if line == "<<<END>>>" {
+            break;
+        }
+        if line == r"\<<<END>>>" {
+            text.push_str("<<<END>>>");
+        } else {
+            text.push_str(line);
+        }
+        text.push('\n');
+    }
+    Ok(text)
+}
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let client = Client::builder()
@@ -52,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
             }
             "echo" => {
-                body = json!({"text": input("text: ")?});
+                body = json!({"text": multiline_input()?});
                 ("POST", "/echo")
             }
             "delete-user" | "put" | "get" | "delete" => {
