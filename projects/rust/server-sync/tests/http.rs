@@ -132,17 +132,30 @@ fn http_input_and_routing() {
 fn unimplemented_routes_are_absent() {
     use rocket::http::Method;
     let client = Client::tracked(create_app()).unwrap();
-    for (method, path) in [
-        (Method::Delete, "/users/me"),
-        (Method::Put, "/texts/note"),
-        (Method::Get, "/texts/note"),
-        (Method::Delete, "/texts/note"),
-    ] {
-        assert_eq!(
-            client.req(method, path).dispatch().status(),
-            Status::NotFound
-        );
-    }
+    assert_eq!(
+        client
+            .delete("/users/me")
+            .dispatch()
+            .status(),
+        Status::NotFound
+    );
+    assert_eq!(
+        client
+            .put("/texts/note")
+            .header(ContentType::JSON)
+            .body(r#"{"text":"hello"}"#)
+            .dispatch()
+            .status(),
+        Status::NotFound
+    );
+    assert_eq!(
+        client.get("/texts/note").dispatch().status(),
+        Status::NotFound
+    );
+    assert_eq!(
+        client.delete("/texts/note").dispatch().status(),
+        Status::NotFound
+    );
     for path in [
         "/ping",
         "/users",
