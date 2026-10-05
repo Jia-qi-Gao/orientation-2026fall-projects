@@ -155,7 +155,9 @@ impl Service {
             // Later server task: record a deadline and include expires_in.
             return (200, json!({"data": {"token": token}}));
         }
-        let protected = matches!(path, "/texts" | "/sessions/current");
+        let protected = path == "/texts"
+            || path == "/sessions/current"
+            || path.starts_with("/texts/");
         if protected {
             let token = authorization.strip_prefix("Bearer ").unwrap_or("");
             let mut users = self.users.lock().unwrap();

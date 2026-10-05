@@ -56,3 +56,29 @@ fn echo_returns_same_text() {
         );
     }
 }
+
+#[test]
+fn put_text_saves_text_for_user() {
+    let service = Service::default();
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    assert_eq!(
+        service.handle("POST", "/users", &account, "").0,
+        201
+    );
+    let login = service.handle("POST", "/sessions", &account, "").1;
+    let token = login["data"]["token"].as_str().unwrap();
+    let authorization = format!("Bearer {token}");
+    let body = json!({"text": "hello rust"});
+    assert_eq!(
+        service.handle(
+            "PUT",
+            "/texts/note",
+            &body,
+            &authorization
+        ),
+        (200, json!({"data": null}))
+    );
+}
