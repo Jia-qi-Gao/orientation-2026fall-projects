@@ -16,14 +16,28 @@ pub const ROUTES: &[(&str, &str)] = &[
     ("DELETE", "/sessions/current"),
     ("GET", "/texts"),
     ("POST", "/echo"),
+    ("GET", "/texts/{name}"),
+    ("PUT", "/texts/{name}"),
+    ("DELETE", "/texts/{name}"),
 ];
 
 pub fn route_error(method: &str, path: &str) -> Option<u16> {
-    match ROUTES.iter().find(|(_, route)| *route == path) {
-        None => Some(404),
-        Some((allowed, _)) if *allowed != method => Some(405),
-        Some(_) => None,
+    if let Some((allowed, _)) = ROUTES.iter().find(|(_, route)| *route == path) {
+        return if *allowed == method {
+            None
+        } else {
+            Some(405)
+        };
     }
+    if let Some(name) = path.strip_prefix("/texts/") {
+        if valid_name(name, 32) {
+            return match method {
+                "PUT" | "GET" | "DELETE" => None,
+                _ => Some(405),
+            };
+        }
+    }
+    Some(404)
 }
 
 pub struct User {
