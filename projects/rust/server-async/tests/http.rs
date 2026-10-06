@@ -139,3 +139,42 @@ fn echo_rejects_oversized_body() {
         Status::PayloadTooLarge
     );
 }
+
+#[test]
+fn http_token_expires() {
+    let client =
+        Client::tracked(create_app(Service::new(1))).unwrap();
+
+    let account = r#"{"username":"alice","password":"password1"}"#;
+    assert_eq!(
+        client
+            .post("/users")
+            .header(ContentType::JSON)
+            .body(account)
+            .dispatch()
+            .status(),
+        Status::Created
+    );
+    let login = client
+        .post("/sessions")
+        .header(ContentType::JSON)
+        .body(account)
+        .dispatch()
+        .into_json::<Value>()
+        .unwrap();
+    assert_eq!(
+        login["data"]["expires_in"].as_u64().unwrap(),
+        1
+    );
+    let token = login["data"]["token"].as_str().unwrap();
+    let authorization = Header::new(
+        "Authorization",
+        format!("Bearer {}", token),
+    );
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    let response = client
+        .get("/texts")
+        .header(authorization)
+        .dispatch();
+    assert_eq!(response.status(), Status::Unauthorized);
+}
