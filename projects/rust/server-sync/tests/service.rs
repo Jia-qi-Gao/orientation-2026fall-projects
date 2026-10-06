@@ -318,3 +318,30 @@ fn delete_user_clears_account_and_texts() {
         (200, json!({"data": []}))
     );
 }
+
+#[test]
+fn expired_token_is_rejected() {
+    let service = Service::new(1);
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    // 刚登录时应该可以访问
+    assert_eq!(
+        service.handle("GET", "/texts", &Value::Null, &token).0,
+        200
+    );
+    // 等待 Token 过期
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    // 过期后应该返回 401
+    assert_eq!(
+        service.handle("GET", "/texts", &Value::Null, &token).0,
+        401
+    );
+}

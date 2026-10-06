@@ -191,6 +191,13 @@ impl Service {
                 return (200, json!({"data": null}));
             }
             let user = users.get_mut(&name).unwrap();
+            if let Some(expires_at) = user.tokens_expired_at {
+                if std::time::Instant::now() >= expires_at {
+                    user.token = None;
+                    user.tokens_expired_at = None;
+                    return error(401, "Login required");
+                }
+            }
             // Later server task: check expiry and keep authorization and state mutation atomic.
             if method == "DELETE" && path == "/sessions/current" {
                 user.token = None;
