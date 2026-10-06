@@ -23,7 +23,7 @@ pub fn route_error(method: &str, path: &str) -> Option<u16> {
         Some(_) => None,
         None => {
             if let Some(name) = path.strip_prefix("/texts/") {
-                if valid_name(name,32) && matches!(method, "PUT" | "GET") {
+                if valid_name(name,32) && matches!(method, "PUT" | "GET" | "DELETE") {
                     return None;
                 }
             }
@@ -182,7 +182,16 @@ impl Service {
                 user.texts.insert(name.to_string(), text.to_string());
                 return (200, json!({"data": null}));
             }
-            if method == "GET" && path.starts_with("/texts") {
+            if method == "DELETE" && path.starts_with("/texts/") {
+                let Some(name) = path.strip_prefix("/texts/") else {
+                    return error(400, "Invalid text name");
+                };
+                if user.texts.remove(name).is_none() {
+                    return error(404, "Not found");
+                };
+                return (200, json!({"data": null}));
+            }
+            if method == "GET" && path.starts_with("/texts/") {
                 let Some(name) = path.strip_prefix("/texts/") else {
                     return error(400, "Invalid text name");
                 };
