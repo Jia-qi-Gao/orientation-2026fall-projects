@@ -82,3 +82,28 @@ fn put_text_saves_text_for_user() {
         (200, json!({"data": null}))
     );
 }
+
+#[test]
+fn get_text_returns_saved_text() {
+    let service = Service::default();
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    service.handle(
+        "PUT",
+        "/texts/note",
+        &json!({"text": "hello Rust"}),
+        &token,
+    );
+    assert_eq!(
+        service.handle("GET", "/texts/note", &Value::Null, &token),
+        (200, json!({"data": "hello Rust"}))
+    );
+}
