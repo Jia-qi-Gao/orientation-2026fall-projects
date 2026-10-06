@@ -51,6 +51,7 @@ pub struct User {
 #[derive(Default)]
 pub struct Service {
     pub users: Mutex<BTreeMap<String, User>>,
+    pub token_ttl_seconds: u64,
 }
 
 pub fn error(status: u16, message: &str) -> (u16, Value) {
@@ -78,6 +79,12 @@ fn new_token() -> String {
 }
 
 impl Service {
+    pub fn new(token_ttl_seconds: u64) -> Self {
+        Self {
+            users: Mutex::new(BTreeMap::new()),
+            token_ttl_seconds,
+        }
+    }
     pub fn handle(
         &self,
         method: &str,
