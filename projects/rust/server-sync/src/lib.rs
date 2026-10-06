@@ -8,6 +8,7 @@ use sha2::Sha256;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 use subtle::ConstantTimeEq;
+use std::time::{Duration, Instant};
 
 pub const ROUTES: &[(&str, &str)] = &[
     ("GET", "/ping"),
@@ -45,6 +46,7 @@ pub struct User {
     pub salt: [u8; 16],
     pub digest: [u8; 32],
     pub token: Option<String>,
+    pub tokens_expired_at: Option<std::time::Instant>,
     pub texts: BTreeMap<String, String>,
 }
 
@@ -138,6 +140,7 @@ impl Service {
                         salt,
                         digest,
                         token: None,
+                        tokens_expired_at: None,
                         texts: BTreeMap::new(),
                     },
                 );
@@ -159,9 +162,15 @@ impl Service {
                 return error(401, "Invalid username or password");
             }
             let token = new_token();
+            let expires_at = if self.token_ttl_seconds == 0 {
+                None
+            } else {
+                Some(Instant::now() + Duration::from_secs(self.token_ttl_seconds))
+            };
             user.token = Some(token.clone());
+            user.tokens_expired_at = expires_at;
             // Later server task: record a deadline and include expires_in.
-            return (200, json!({"data": {"token": token}}));
+        return (200, json!({"data": {"token": token, "expires_in": self.token_ttl_seconds}}));
         }
         let protected = path == "/texts"
             || path == "/sessions/current"
