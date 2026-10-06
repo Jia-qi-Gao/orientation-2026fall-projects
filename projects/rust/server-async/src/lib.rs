@@ -200,7 +200,9 @@ impl Service {
                 };
                 return (200, json!({"data": text}));
             }
-                
+            if method == "GET" && path == "/texts" {
+                return (200, json!({"data": user.texts.keys().collect::<Vec<_>>()}));
+            }     
         }
         error(404, "Not found")
     }

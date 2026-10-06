@@ -294,3 +294,56 @@ fn delete_missing_text_returns_404() {
     );
     assert_eq!(result.0, 404);
 }
+
+#[test]
+fn text_list_updates_after_delete() {
+    let service = Service::default();
+    let account = serde_json::json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    for name in ["zebra", "apple", "mango"] {
+        service.handle(
+            "PUT",
+            &format!("/texts/{name}"),
+            &serde_json::json!({
+                "text": name
+            }),
+            &token,
+        );
+    }
+    let result = service.handle(
+        "GET",
+        "/texts",
+        &serde_json::Value::Null,
+        &token,
+    );
+    assert_eq!(result.0, 200);
+    assert_eq!(
+        result.1["data"],
+        serde_json::json!(["apple", "mango", "zebra"])
+    );
+    service.handle(
+        "DELETE",
+        "/texts/mango",
+        &serde_json::Value::Null,
+        &token,
+    );
+    let result = service.handle(
+        "GET",
+        "/texts",
+        &serde_json::Value::Null,
+        &token,
+    );
+    assert_eq!(result.0, 200);
+    assert_eq!(
+        result.1["data"],
+        serde_json::json!(["apple", "zebra"])
+    );
+}
