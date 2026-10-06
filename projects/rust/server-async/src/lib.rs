@@ -167,9 +167,12 @@ impl Service {
                 return error(401, "Invalid username or password");
             }
             let token = new_token();
+            let expires_at = 
+                std::time::Instant::now() + std::time::Duration::from_secs(self.token_ttl_seconds);
             user.token = Some(token.clone());
+            user.token_expires_at = Some(expires_at);
             // Later server task: record a deadline and include expires_in.
-            return (200, json!({"data": {"token": token}}));
+            return (200, json!({"data": {"token": token, "expires_in": self.token_ttl_seconds}}));
         }
         let protected = path == "/texts"
                 || path =="/sessions/current"
@@ -190,7 +193,13 @@ impl Service {
                 return (200, json!({"data": null}));
             }
             let user = users.get_mut(&name).unwrap();
-            // Later server task: check expiry and keep authorization and state mutation atomic.
+            if let Some(expires_at) = user.token_expires_at {
+                if std::time::Instant::now() >= expires_at {
+                    user.token = None;
+                    user.token_expires_at = None;
+                    return error(401, "Token expired");
+                }
+            }
             if method == "DELETE" && path == "/sessions/current" {
                 user.token = None;
                 return (200, json!({"data": null}));
