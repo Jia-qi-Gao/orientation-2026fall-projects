@@ -544,3 +544,19 @@ fn login_returns_expires_in() {
         .unwrap();
     assert!(expires_in > 0);
 }
+
+#[test]
+fn expired_token_is_rejected() {
+    let service = Service::new(1);
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login.0, 200);
+    let token = login.1["data"]["token"].as_str().unwrap().to_string();
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    let result = service.handle("GET", "/texts", &json!({}), &format!("Bearer {}", token));
+    assert_eq!(result.0, 401);
+}
