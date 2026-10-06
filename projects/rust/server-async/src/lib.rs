@@ -19,9 +19,16 @@ pub const ROUTES: &[(&str, &str)] = &[
 
 pub fn route_error(method: &str, path: &str) -> Option<u16> {
     match ROUTES.iter().find(|(_, route)| *route == path) {
-        None => Some(404),
         Some((allowed, _)) if *allowed != method => Some(405),
         Some(_) => None,
+        None => {
+            if let Some(name) = path.strip_prefix("/texts/") {
+                if valid_name(name,32) && method == "PUT" {
+                    return None;
+                }
+            }
+            Some(404)
+        }
     }
 }
 
@@ -146,7 +153,9 @@ impl Service {
             // Later server task: record a deadline and include expires_in.
             return (200, json!({"data": {"token": token}}));
         }
-        let protected = matches!(path, "/texts" | "/sessions/current");
+        let protected = path == "/texts"
+                || path =="/sessions/current"
+                || path.starts_with("/texts/");
         if protected {
             let token = authorization.strip_prefix("Bearer ").unwrap_or("");
             let mut users = self.users.lock().unwrap();
@@ -161,6 +170,16 @@ impl Service {
             // Later server task: check expiry and keep authorization and state mutation atomic.
             if method == "DELETE" && path == "/sessions/current" {
                 user.token = None;
+                return (200, json!({"data": null}));
+            }
+            if method == "PUT" && path.starts_with("/texts/") {
+                let Some(name) = path.strip_prefix("/texts/") else {
+                    return error(400, "Invalid text name");
+                };
+                let Some(text) = body.get("text").and_then(Value::as_str) else {
+                    return error(400, "Expected text");
+                };
+                user.texts.insert(name.to_string(), text.to_string());
                 return (200, json!({"data": null}));
             }
             if method == "GET" && path == "/texts" {
