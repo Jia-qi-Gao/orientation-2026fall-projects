@@ -201,3 +201,63 @@ fn users_texts_are_isolated() {
         (200, json!({"data": "Bob's text"}))
     );
 }
+
+
+#[test]
+fn text_list_updates_after_delete() {
+    let service = Service::default();
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    // 保存三个文本
+    service.handle(
+        "PUT",
+        "/texts/zebra",
+        &json!({"text": "z"}),
+        &token,
+    );
+    service.handle(
+        "PUT",
+        "/texts/apple",
+        &json!({"text": "a"}),
+        &token,
+    );
+    service.handle(
+        "PUT",
+        "/texts/mango",
+        &json!({"text": "m"}),
+        &token,
+    );
+    // 列表应该按名称升序
+    assert_eq!(
+        service.handle("GET", "/texts", &Value::Null, &token),
+        (
+            200,
+            json!({
+                "data": ["apple", "mango", "zebra"]
+            })
+        )
+    );
+    // 删除 mango
+    assert_eq!(
+        service.handle("DELETE", "/texts/mango", &Value::Null, &token),
+        (200, json!({"data": null}))
+    );
+    // 删除后列表应该更新
+    assert_eq!(
+        service.handle("GET", "/texts", &Value::Null, &token),
+        (
+            200,
+            json!({
+                "data": ["apple", "zebra"]
+            })
+        )
+    );
+}
