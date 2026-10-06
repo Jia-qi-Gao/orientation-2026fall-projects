@@ -15,6 +15,7 @@ pub const ROUTES: &[(&str, &str)] = &[
     ("DELETE", "/sessions/current"),
     ("GET", "/texts"),
     ("POST", "/echo"),
+    ("DELETE", "/users/me"),
 ];
 
 pub fn route_error(method: &str, path: &str) -> Option<u16> {
@@ -155,6 +156,7 @@ impl Service {
         }
         let protected = path == "/texts"
                 || path =="/sessions/current"
+                || path == "/users/me"
                 || path.starts_with("/texts/");
         if protected {
             let token = authorization.strip_prefix("Bearer ").unwrap_or("");
@@ -166,6 +168,10 @@ impl Service {
             let Some(name) = name else {
                 return error(401, "Login required");
             };
+            if method == "DELETE" && path == "/users/me" {
+                users.remove(&name);
+                return (200, json!({"data": null}));
+            }
             let user = users.get_mut(&name).unwrap();
             // Later server task: check expiry and keep authorization and state mutation atomic.
             if method == "DELETE" && path == "/sessions/current" {
