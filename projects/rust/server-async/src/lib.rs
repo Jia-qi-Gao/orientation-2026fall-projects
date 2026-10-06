@@ -14,6 +14,7 @@ pub const ROUTES: &[(&str, &str)] = &[
     ("POST", "/sessions"),
     ("DELETE", "/sessions/current"),
     ("GET", "/texts"),
+    ("POST", "/echo"),
 ];
 
 pub fn route_error(method: &str, path: &str) -> Option<u16> {

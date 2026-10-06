@@ -45,3 +45,20 @@ fn concurrent_registration_has_one_winner() {
     assert_eq!(statuses.iter().filter(|&&s| s == 201).count(), 1);
     assert_eq!(statuses.iter().filter(|&&s| s == 409).count(), 3);
 }
+
+#[test]
+fn echo_returns_same_text() {
+    let service = Service::default();
+    for text in ["hello", "", "你好 Rust", "hello\nworld"] {
+        let result = service.handle(
+            "POST",
+            "/echo",
+            &serde_json::json!({
+                "text": text
+            }),
+            "",
+        );
+        assert_eq!(result.0, 200);
+        assert_eq!(result.1["data"], text);
+    }
+}
