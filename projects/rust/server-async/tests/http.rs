@@ -178,3 +178,26 @@ fn http_token_expires() {
         .dispatch();
     assert_eq!(response.status(), Status::Unauthorized);
 }
+
+#[test]
+fn http_recovers_after_bad_request() {
+    let client =
+        Client::tracked(create_app(Service::default())).unwrap();
+    // 先发送一个错误的 JSON 请求
+    let bad = client
+        .post("/users")
+        .header(ContentType::JSON)
+        .body("not json")
+        .dispatch();
+    assert_eq!(bad.status(), Status::BadRequest);
+    // 之后发送正常请求，服务器应该仍然可以工作
+    let good = client
+        .post("/users")
+        .header(ContentType::JSON)
+        .body(r#"{"username":"alice","password":"password1"}"#)
+        .dispatch();
+    assert_eq!(good.status(), Status::Created);
+    // 再验证后续请求也正常
+    let ping = client.get("/ping").dispatch();
+    assert_eq!(ping.status(), Status::Ok);
+}
