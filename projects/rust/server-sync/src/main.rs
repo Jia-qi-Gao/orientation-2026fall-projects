@@ -12,5 +12,5 @@ struct Args {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    http::run(args.address, Service::new(args.token_ttl_seconds));
+    http::run(args.address, Service::new(args.token_ttl_seconds))
 }
