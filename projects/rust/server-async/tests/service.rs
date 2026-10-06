@@ -62,3 +62,34 @@ fn echo_returns_same_text() {
         assert_eq!(result.1["data"], text);
     }
 }
+
+#[test]
+fn echo_rejects_invalid_input() {
+    let service = Service::default();
+    let result = service.handle(
+        "POST",
+        "/echo",
+        &serde_json::json!({}),
+        "",
+    );
+    assert_eq!(result.0, 400);
+    let result = service.handle(
+        "POST",
+        "/echo",
+        &serde_json::json!({
+            "text": 123
+        }),
+        "",
+    );
+    assert_eq!(result.0, 400);
+    let result = service.handle(
+        "POST",
+        "/echo",
+        &serde_json::json!({
+            "text": "hello",
+            "extra": "value"
+        }),
+        "",
+    );
+    assert_eq!(result.0, 400);
+}

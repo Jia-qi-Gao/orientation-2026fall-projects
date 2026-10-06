@@ -82,6 +82,18 @@ impl Service {
         if method == "GET" && path == "/ping" {
             return (200, json!({"data": "pong"}));
         }
+        if method == "POST" && path == "/echo" {
+            let Some(object) = body.as_object() else {
+                return error(400, "Expected object");
+            };
+            if object.len() != 1 {
+                return error(400, "Invalid echo field");
+            }
+            let Some(text) = object.get("text").and_then(Value::as_str) else {
+                return error(400, "Expected text");
+            };
+            return (200, json!({"data": text}));
+        }
         if method == "POST" && matches!(path, "/users" | "/sessions") {
             let Some(name) = body.get("username").and_then(Value::as_str) else {
                 return error(400, "Expected username");

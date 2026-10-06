@@ -134,3 +134,21 @@ fn unimplemented_routes_are_absent() {
         );
     }
 }
+
+#[test]
+fn echo_rejects_oversized_body() {
+    let client = Client::tracked(create_app()).unwrap();
+    let body = format!(
+        "{{\"text\":\"{}\"}}",
+        "a".repeat(524_288)
+    );
+    assert_eq!(
+        client
+            .post("/echo")
+            .header(ContentType::JSON)
+            .body(body)
+            .dispatch()
+            .status(),
+        Status::PayloadTooLarge
+    );
+}
