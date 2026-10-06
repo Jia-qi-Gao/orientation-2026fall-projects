@@ -345,3 +345,43 @@ fn expired_token_is_rejected() {
         401
     );
 }
+
+#[test]
+fn expired_token_can_be_replaced_by_login() {
+    let service = Service::new(1);
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    // 第一次登录
+    let login = service.handle("POST", "/sessions", &account, "");
+    let old_token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    // 等待旧 Token 过期
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    // 重新登录
+    let login = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login.0, 200);
+    let new_token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    // 新 Token 应该可以使用
+    assert_eq!(
+        service.handle("GET", "/texts", &Value::Null, &new_token).0,
+        200
+    );
+    // 旧 Token 不能使用
+    assert_eq!(
+        service.handle("GET", "/texts", &Value::Null, &old_token).0,
+        401
+    );
+    // expires_in 应该存在
+    assert_eq!(
+        login.1["data"]["expires_in"],
+        json!(1)
+    );
+}
