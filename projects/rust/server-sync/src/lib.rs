@@ -184,6 +184,15 @@ impl Service {
                 user.texts.insert(name.to_string(), text.to_string());
                 return (200, json!({"data": null}));
             }
+            if method == "DELETE" && path.starts_with("/texts/") {
+                let Some(name) = path.strip_prefix("/texts/") else {
+                    return error(400, "Invalid text name");
+                };
+                if user.texts.remove(name).is_none() {
+                    return error(404, "Not found");
+                }
+                return (200, json!({"data": null}));
+            }
             if method == "GET" && path.starts_with("/texts/") {
                 let Some(name) = path.strip_prefix("/texts/") else {
                     return error(400, "Invalid text name");
