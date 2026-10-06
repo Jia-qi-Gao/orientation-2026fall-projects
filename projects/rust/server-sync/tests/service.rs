@@ -107,3 +107,35 @@ fn get_text_returns_saved_text() {
         (200, json!({"data": "hello Rust"}))
     );
 }
+
+#[test]
+fn delete_text_removes_text() {
+    let service = Service::default();
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    // 先保存文本
+    service.handle(
+        "PUT",
+        "/texts/note",
+        &json!({"text": "hello Rust"}),
+        &token,
+    );
+    // 删除文本
+    assert_eq!(
+        service.handle("DELETE", "/texts/note", &Value::Null, &token),
+        (200, json!({"data": null}))
+    );
+    // 再读取应该不存在
+    assert_eq!(
+        service.handle("GET", "/texts/note", &Value::Null, &token),
+        (404, json!({"message": "Not found"}))
+    );
+}
