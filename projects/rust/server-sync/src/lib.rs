@@ -174,6 +174,16 @@ impl Service {
                 user.token = None;
                 return (200, json!({"data": null}));
             }
+            if method == "PUT" && path.starts_with("/texts/") {
+                let Some(name) = path.strip_prefix("/texts/") else {
+                    return error(400, "Invalid text name");
+                };
+                let Some(text) = body.get("text").and_then(Value::as_str) else {
+                    return error(400, "Expected text");
+                };
+                user.texts.insert(name.to_string(), text.to_string());
+                return (200, json!({"data": null}));
+            } 
             if method == "GET" && path == "/texts" {
                 return (200, json!({"data": user.texts.keys().collect::<Vec<_>>()}));
             }
