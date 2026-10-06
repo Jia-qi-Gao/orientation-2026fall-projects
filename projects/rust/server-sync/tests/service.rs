@@ -385,3 +385,51 @@ fn expired_token_can_be_replaced_by_login() {
         json!(1)
     );
 }
+
+#[test]
+fn concurrent_text_updates_are_consistent() {
+    use std::sync::Arc;
+    use std::thread;
+    let service = Arc::new(Service::new(0));
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    let mut workers = Vec::new();
+    for i in 0..4 {
+        let service = Arc::clone(&service);
+        let token = token.clone();
+
+        workers.push(thread::spawn(move || {
+            service.handle(
+                "PUT",
+                "/texts/note",
+                &json!({
+                    "text": format!("text-{i}")
+                }),
+                &token,
+            )
+            .0
+        }));
+    }
+    for worker in workers {
+        assert_eq!(worker.join().unwrap(), 200);
+    }
+    let result = service.handle(
+        "GET",
+        "/texts/note",
+        &Value::Null,
+        &token,
+    );
+    assert_eq!(result.0, 200);
+    let text = result.1["data"].as_str().unwrap();
+    assert!(
+        ["text-0", "text-1", "text-2", "text-3"].contains(&text)
+    );
+}
