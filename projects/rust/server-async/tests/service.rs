@@ -212,3 +212,25 @@ fn text_requires_login() {
     );
     assert_eq!(result.0, 401);
 }
+
+#[test]
+fn get_missing_text_returns_404() {
+    let service = Service::default();
+    let account = serde_json::json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    let result = service.handle(
+        "GET",
+        "/texts/missing",
+        &serde_json::Value::Null,
+        &token,
+    );
+    assert_eq!(result.0, 404);
+}
