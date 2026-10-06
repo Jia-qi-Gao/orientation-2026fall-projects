@@ -14,6 +14,7 @@ pub const ROUTES: &[(&str, &str)] = &[
     ("POST", "/users"),
     ("POST", "/sessions"),
     ("DELETE", "/sessions/current"),
+    ("DELETE", "/users/me"),
     ("GET", "/texts"),
     ("POST", "/echo"),
     ("GET", "/texts/{name}"),
@@ -157,6 +158,7 @@ impl Service {
         }
         let protected = path == "/texts"
             || path == "/sessions/current"
+            || path == "/users/me"
             || path.starts_with("/texts/");
         if protected {
             let token = authorization.strip_prefix("Bearer ").unwrap_or("");
