@@ -411,3 +411,59 @@ fn users_texts_are_isolated() {
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], "alice text");
 }
+
+#[test]
+fn deleting_one_users_text_does_not_affect_another() {
+    let service = Service::default();
+    let alice = serde_json::json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    let bob = serde_json::json!({
+        "username": "bob",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &alice, "");
+    service.handle("POST", "/users", &bob, "");
+    let alice_login = service.handle("POST", "/sessions", &alice, "");
+    let alice_token = format!(
+        "Bearer {}",
+        alice_login.1["data"]["token"].as_str().unwrap()
+    );
+    let bob_login = service.handle("POST", "/sessions", &bob, "");
+    let bob_token = format!(
+        "Bearer {}",
+        bob_login.1["data"]["token"].as_str().unwrap()
+    );
+    service.handle(
+        "PUT",
+        "/texts/note",
+        &serde_json::json!({
+            "text": "alice text"
+        }),
+        &alice_token,
+    );
+    service.handle(
+        "PUT",
+        "/texts/note",
+        &serde_json::json!({
+            "text": "bob text"
+        }),
+        &bob_token,
+    );
+    let result = service.handle(
+        "DELETE",
+        "/texts/note",
+        &serde_json::Value::Null,
+        &bob_token,
+    );
+    assert_eq!(result.0, 200);
+    let result = service.handle(
+        "GET",
+        "/texts/note",
+        &serde_json::Value::Null,
+        &alice_token,
+    );
+    assert_eq!(result.0, 200);
+    assert_eq!(result.1["data"], "alice text");
+}
