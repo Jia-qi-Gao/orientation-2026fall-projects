@@ -191,3 +191,24 @@ fn put_text_overwrites_existing_text() {
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], "new text");
 }
+
+#[test]
+fn text_requires_login() {
+    let service = Service::default();
+    let result = service.handle(
+        "PUT",
+        "/texts/note",
+        &serde_json::json!({
+            "text": "hello"
+        }),
+        "",
+    );
+    assert_eq!(result.0, 401);
+    let result = service.handle(
+        "GET",
+        "/texts/note",
+        &serde_json::Value::Null,
+        "",
+    );
+    assert_eq!(result.0, 401);
+}
