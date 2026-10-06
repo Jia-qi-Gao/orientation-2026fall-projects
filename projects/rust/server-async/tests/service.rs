@@ -560,3 +560,38 @@ fn expired_token_is_rejected() {
     let result = service.handle("GET", "/texts", &json!({}), &format!("Bearer {}", token));
     assert_eq!(result.0, 401);
 }
+
+#[test]
+fn token_does_not_renew_on_access() {
+    let service = Service::new(2);
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login.0, 200);
+    let token = login.1["data"]["token"]
+        .as_str()
+        .unwrap()
+        .to_string();
+
+    // 在 token 过期前访问一次
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    let result = service.handle(
+        "GET",
+        "/texts",
+        &json!({}),
+        &format!("Bearer {}", token),
+    );
+    assert_eq!(result.0, 200);
+    // 再等 2 秒，此时原来的 token 应该已经过期
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    let result = service.handle(
+        "GET",
+        "/texts",
+        &json!({}),
+        &format!("Bearer {}", token),
+    );
+    assert_eq!(result.0, 401);
+}
