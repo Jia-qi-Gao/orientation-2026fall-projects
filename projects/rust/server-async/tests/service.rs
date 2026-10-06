@@ -467,3 +467,59 @@ fn deleting_one_users_text_does_not_affect_another() {
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], "alice text");
 }
+
+#[test]
+fn delete_user_clears_account_and_texts() {
+    let service = Service::default();
+    let account = serde_json::json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    service.handle(
+        "PUT",
+        "/texts/note",
+        &serde_json::json!({
+            "text": "alice text"
+        }),
+        &token,
+    );
+    let result = service.handle(
+        "DELETE",
+        "/users/me",
+        &serde_json::Value::Null,
+        &token,
+    );
+    assert_eq!(result.0, 200);
+    // Old token should no longer work.
+    let result = service.handle(
+        "GET",
+        "/texts/note",
+        &serde_json::Value::Null,
+        &token,
+    );
+    assert_eq!(result.0, 401);
+    // Re-register the same username.
+    let result = service.handle("POST", "/users", &account, "");
+    assert_eq!(result.0, 201);
+    let login = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login.0, 200);
+    let new_token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    // Old text should be gone.
+    let result = service.handle(
+        "GET",
+        "/texts",
+        &serde_json::Value::Null,
+        &new_token,
+    );
+    assert_eq!(result.0, 200);
+    assert_eq!(result.1["data"], serde_json::json!([]));
+}
