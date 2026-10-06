@@ -57,29 +57,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Err(error) => return Err(error.into()),
         };
         let mut body = Value::Null;
-        let (method, path) = match command.as_str() {
+        let (method, path): (&str, String) = match command.as_str() {
             "q" => break,
-            "ping" => ("GET", "/ping"),
-            "list" => ("GET", "/texts"),
-            "logout" => ("DELETE", "/sessions/current"),
+            "ping" => ("GET", "/ping".to_string()),
+            "list" => ("GET", "/texts".to_string()),
+            "logout" => ("DELETE", "/sessions/current".to_string()),
             "register" | "login" => {
                 body = json!({"username": input("username: ")?, "password": rpassword::prompt_password("password: ")?});
                 (
                     "POST",
                     if command == "register" {
-                        "/users"
+                        "/users".to_string()
                     } else {
-                        "/sessions"
+                        "/sessions".to_string()
                     },
                 )
             }
             "echo" => {
                 body = json!({"text": multiline_input()?});
-                ("POST", "/echo")
+                ("POST", "/echo".to_string())
             }
-            "delete-user" | "put" | "get" | "delete" => {
-                println!("This task is not implemented in the starting code yet.");
-                continue;
+            "put" => {
+                let name = input("text name: ")?;
+                let text = multiline_input()?;
+                body = json!({"text": text});
+                ("PUT", format!("/texts/{name}"))
             }
             _ => {
                 println!("Unknown command.");
@@ -90,7 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &client,
             &args.url,
             method.parse().unwrap(),
-            path,
+            &path,
             &token,
             if body.is_null() { None } else { Some(&body) },
         );
