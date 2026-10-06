@@ -688,3 +688,50 @@ fn text_name_boundaries() {
     );
     assert_eq!(result.0, 404);
 }
+
+#[test]
+fn concurrent_text_updates_are_consistent() {
+    use std::sync::Arc;
+    use std::thread;
+    let service = Arc::new(Service::default());
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = login.1["data"]["token"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let auth = format!("Bearer {}", token);
+    let mut handles = Vec::new();
+    for i in 0..4 {
+        let service = Arc::clone(&service);
+        let auth = auth.clone();
+        handles.push(thread::spawn(move || {
+            let text = format!("text-{}", i);
+            let result = service.handle(
+                "PUT",
+                "/texts/note",
+                &json!({"text": text}),
+                &auth,
+            );
+            assert_eq!(result.0, 200);
+        }));
+    }
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    let result = service.handle(
+        "GET",
+        "/texts/note",
+        &json!(null),
+        &auth,
+    );
+    assert_eq!(result.0, 200);
+    let final_text = result.1["data"].as_str().unwrap();
+    assert!(
+        ["text-0", "text-1", "text-2", "text-3"].contains(&final_text)
+    );
+}
