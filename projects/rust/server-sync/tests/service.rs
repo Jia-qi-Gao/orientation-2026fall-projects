@@ -261,3 +261,60 @@ fn text_list_updates_after_delete() {
         )
     );
 }
+
+#[test]
+fn delete_user_clears_account_and_texts() {
+    let service = Service::default();
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    // 注册
+    assert_eq!(
+        service.handle("POST", "/users", &account, "").0,
+        201
+    );
+    // 登录
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    // 保存文本
+    assert_eq!(
+        service.handle(
+            "PUT",
+            "/texts/note",
+            &json!({"text": "hello Rust"}),
+            &token,
+        )
+        .0,
+        200
+    );
+    // 注销
+    assert_eq!(
+        service.handle("DELETE", "/users/me", &Value::Null, &token),
+        (200, json!({"data": null}))
+    );
+    // 旧 token 应该失效
+    assert_eq!(
+        service.handle("GET", "/texts", &Value::Null, &token).0,
+        401
+    );
+    // 同名重新注册应该成功
+    assert_eq!(
+        service.handle("POST", "/users", &account, "").0,
+        201
+    );
+    // 重新登录
+    let login = service.handle("POST", "/sessions", &account, "");
+    let new_token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    // 新账号不应该有旧文本
+    assert_eq!(
+        service.handle("GET", "/texts", &Value::Null, &new_token),
+        (200, json!({"data": []}))
+    );
+}
