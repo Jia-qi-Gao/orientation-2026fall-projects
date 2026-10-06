@@ -523,3 +523,24 @@ fn delete_user_clears_account_and_texts() {
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], serde_json::json!([]));
 }
+
+#[test]
+fn login_returns_expires_in() {
+    let service = Service::default();
+    let account = serde_json::json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let result = service.handle(
+        "POST",
+        "/sessions",
+        &account,
+        "",
+    );
+    assert_eq!(result.0, 200);
+    let expires_in = result.1["data"]["expires_in"]
+        .as_u64()
+        .unwrap();
+    assert!(expires_in > 0);
+}

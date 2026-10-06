@@ -38,11 +38,27 @@ pub struct User {
     pub digest: [u8; 32],
     pub token: Option<String>,
     pub texts: BTreeMap<String, String>,
+    pub token_expires_at: Option<std::time::Instant>,
 }
 
-#[derive(Default)]
 pub struct Service {
     pub users: Mutex<BTreeMap<String, User>>,
+    pub token_ttl_seconds: u64,
+}
+
+impl Service {
+    pub fn new(token_ttl_seconds: u64) -> Self {
+        Self {
+            users: Mutex::new(BTreeMap::new()),
+            token_ttl_seconds,
+        }
+    }
+}
+
+impl Default for Service {
+    fn default() -> Self {
+        Self::new(3600)
+    }
 }
 
 pub fn error(status: u16, message: &str) -> (u16, Value) {
@@ -130,6 +146,7 @@ impl Service {
                         digest,
                         token: None,
                         texts: BTreeMap::new(),
+                        token_expires_at: None,
                     },
                 );
                 return (201, json!({"data": {"username": name}}));
