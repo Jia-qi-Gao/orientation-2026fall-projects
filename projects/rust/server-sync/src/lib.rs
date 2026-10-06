@@ -198,7 +198,7 @@ impl Service {
                     return error(400, "Invalid text name");
                 };
                 let Some(text) = user.texts.get(name) else {
-                    return error(404, "Text not found");
+                    return error(404, "Not found");
                 };
                 return (200, json!({"data": text}));
             } 
