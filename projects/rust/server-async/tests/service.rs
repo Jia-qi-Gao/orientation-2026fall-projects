@@ -595,3 +595,45 @@ fn token_does_not_renew_on_access() {
     );
     assert_eq!(result.0, 401);
 }
+
+#[test]
+fn relogin_replaces_old_token() {
+    let service = Service::new(60);
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    // 第一次登录
+    let login1 = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login1.0, 200);
+    let token1 = login1.1["data"]["token"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    // 第二次登录
+    let login2 = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login2.0, 200);
+    let token2 = login2.1["data"]["token"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    // 两次登录得到的 token 应该不同
+    assert_ne!(token1, token2);
+    // 旧 token 应该失效
+    let old = service.handle(
+        "GET",
+        "/texts",
+        &json!({}),
+        &format!("Bearer {}", token1),
+    );
+    assert_eq!(old.0, 401);
+    // 新 token 应该可以正常使用
+    let new = service.handle(
+        "GET",
+        "/texts",
+        &json!({}),
+        &format!("Bearer {}", token2),
+    );
+    assert_eq!(new.0, 200);
+}
