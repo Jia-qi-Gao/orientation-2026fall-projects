@@ -121,3 +121,34 @@ fn put_text_saves_text_for_user() {
     );
     assert_eq!(result.0, 200);
 }
+
+#[test]
+fn get_text_returns_saved_text() {
+    let service = Service::default();
+    let account = serde_json::json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    service.handle(
+        "PUT",
+        "/texts/note",
+        &serde_json::json!({
+            "text": "hello rust"
+        }),
+        &token,
+    );
+    let result = service.handle(
+        "GET",
+        "/texts/note",
+        &serde_json::Value::Null,
+        &token,
+    );
+    assert_eq!(result.0, 200);
+    assert_eq!(result.1["data"], "hello rust");
+}
