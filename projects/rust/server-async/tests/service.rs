@@ -272,3 +272,25 @@ fn delete_text_removes_text() {
     );
     assert_eq!(result.0, 404);
 }
+
+#[test]
+fn delete_missing_text_returns_404() {
+    let service = Service::default();
+    let account = serde_json::json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    let result = service.handle(
+        "DELETE",
+        "/texts/missing",
+        &serde_json::Value::Null,
+        &token,
+    );
+    assert_eq!(result.0, 404);
+}
