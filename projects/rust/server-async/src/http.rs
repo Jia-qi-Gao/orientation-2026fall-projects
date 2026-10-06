@@ -126,8 +126,8 @@ impl Handler for Dispatch {
     }
 }
 
-pub fn create_app() -> Rocket<Build> {
-    let dispatch = Dispatch(Arc::new(Service::default()));
+pub fn create_app(service: Service) -> Rocket<Build> {
+    let dispatch = Dispatch(Arc::new(service));
     let routes: Vec<_> = [
         Method::Get,
         Method::Post,
@@ -144,3 +144,4 @@ pub fn create_app() -> Rocket<Build> {
     .collect();
     rocket::build().attach(ConsoleOutput).mount("/", routes)
 }
+

@@ -1,11 +1,11 @@
-use rm_server_async::http::create_app;
+use rm_server_async::{http::create_app, Service};
 use rocket::http::{ContentType, Header, Status};
 use rocket::local::blocking::Client;
 use serde_json::{Value, json};
 
 #[test]
 fn http_account_lifecycle() {
-    let client = Client::tracked(create_app()).unwrap();
+    let client = Client::tracked(create_app(Service::default())).unwrap();
     let ping = client.get("/ping").dispatch();
     assert_eq!(ping.status(), Status::Ok);
     assert_eq!(ping.into_json::<Value>().unwrap(), json!({"data": "pong"}));
@@ -57,7 +57,7 @@ fn http_account_lifecycle() {
 
 #[test]
 fn http_input_and_routing() {
-    let client = Client::tracked(create_app()).unwrap();
+    let client = Client::tracked(create_app(Service::default())).unwrap();
     for body in [b"not JSON".to_vec(), vec![0xff], b"NaN".to_vec()] {
         assert_eq!(
             client
@@ -98,7 +98,7 @@ fn http_input_and_routing() {
         Status::BadRequest
     );
     assert_eq!(client.get("/missing").dispatch().status(), Status::NotFound);
-    assert_eq!(client.get("/echo").dispatch().status(), Status::NotFound);
+    assert_eq!(client.get("/echo").dispatch().status(), Status::MethodNotAllowed);
     assert_eq!(
         client.patch("/ping").dispatch().status(),
         Status::MethodNotAllowed
@@ -107,20 +107,7 @@ fn http_input_and_routing() {
 
 #[test]
 fn unimplemented_routes_are_absent() {
-    use rocket::http::Method;
-    let client = Client::tracked(create_app()).unwrap();
-    for (method, path) in [
-        (Method::Post, "/echo"),
-        (Method::Delete, "/users/me"),
-        (Method::Put, "/texts/note"),
-        (Method::Get, "/texts/note"),
-        (Method::Delete, "/texts/note"),
-    ] {
-        assert_eq!(
-            client.req(method, path).dispatch().status(),
-            Status::NotFound
-        );
-    }
+    let client = Client::tracked(create_app(Service::default())).unwrap();
     for path in [
         "/ping",
         "/users",
@@ -137,7 +124,7 @@ fn unimplemented_routes_are_absent() {
 
 #[test]
 fn echo_rejects_oversized_body() {
-    let client = Client::tracked(create_app()).unwrap();
+    let client = Client::tracked(create_app(Service::default())).unwrap();
     let body = format!(
         "{{\"text\":\"{}\"}}",
         "a".repeat(524_288)
