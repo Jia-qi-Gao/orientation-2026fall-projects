@@ -183,6 +183,15 @@ impl Service {
                 };
                 user.texts.insert(name.to_string(), text.to_string());
                 return (200, json!({"data": null}));
+            }
+            if method == "GET" && path.starts_with("/texts/") {
+                let Some(name) = path.strip_prefix("/texts/") else {
+                    return error(400, "Invalid text name");
+                };
+                let Some(text) = user.texts.get(name) else {
+                    return error(404, "Text not found");
+                };
+                return (200, json!({"data": text}));
             } 
             if method == "GET" && path == "/texts" {
                 return (200, json!({"data": user.texts.keys().collect::<Vec<_>>()}));
