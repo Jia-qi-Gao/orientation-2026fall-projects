@@ -93,3 +93,31 @@ fn echo_rejects_invalid_input() {
     );
     assert_eq!(result.0, 400);
 }
+
+#[test]
+fn put_text_saves_text_for_user() {
+    let service = Service::default();
+    let account = serde_json::json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    assert_eq!(
+        service.handle("POST", "/users", &account, "").0,
+        201
+    );
+    let login = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login.0, 200);
+    let token = format!(
+        "Bearer {}",
+        login.1["data"]["token"].as_str().unwrap()
+    );
+    let result = service.handle(
+        "PUT",
+        "/texts/note",
+        &serde_json::json!({
+            "text": "hello rust"
+        }),
+        &token,
+    );
+    assert_eq!(result.0, 200);
+}
