@@ -433,3 +433,31 @@ fn concurrent_text_updates_are_consistent() {
         ["text-0", "text-1", "text-2", "text-3"].contains(&text)
     );
 }
+
+#[test]
+fn expired_token_cannot_delete_user() {
+    let service = Service::new(1);
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login.0, 200);
+    let token = login.1["data"]["token"]
+        .as_str()
+        .unwrap()
+        .to_string();
+
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    let result = service.handle(
+        "DELETE",
+        "/users/me",
+        &Value::Null,
+        &format!("Bearer {}", token),
+    );
+    assert_eq!(result.0, 401);
+    // 用户仍然存在，可以重新登录
+    let login_again = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login_again.0, 200);
+}

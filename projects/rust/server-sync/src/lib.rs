@@ -50,10 +50,15 @@ pub struct User {
     pub texts: BTreeMap<String, String>,
 }
 
-#[derive(Default)]
 pub struct Service {
     pub users: Mutex<BTreeMap<String, User>>,
     pub token_ttl_seconds: u64,
+}
+
+impl Default for Service {
+    fn default() -> Self {
+        Self::new(300)
+    }
 }
 
 pub fn error(status: u16, message: &str) -> (u16, Value) {
@@ -186,10 +191,6 @@ impl Service {
             let Some(name) = name else {
                 return error(401, "Login required");
             };
-            if method == "DELETE" && path == "/users/me" {
-                users.remove(&name);
-                return (200, json!({"data": null}));
-            }
             let user = users.get_mut(&name).unwrap();
             if let Some(expires_at) = user.tokens_expired_at {
                 if std::time::Instant::now() >= expires_at {
@@ -197,6 +198,10 @@ impl Service {
                     user.tokens_expired_at = None;
                     return error(401, "Login required");
                 }
+            }
+            if method == "DELETE" && path == "/users/me" {
+                users.remove(&name);
+                return (200, json!({"data": null}));
             }
             // Later server task: check expiry and keep authorization and state mutation atomic.
             if method == "DELETE" && path == "/sessions/current" {
