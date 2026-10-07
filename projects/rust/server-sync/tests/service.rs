@@ -502,7 +502,6 @@ fn text_name_boundaries() {
 #[test]
 fn echo_text_size_boundary() {
     let service = Service::default();
-
     let valid_text = "a".repeat(65_536);
     let result = service.handle(
         "POST",
@@ -511,13 +510,48 @@ fn echo_text_size_boundary() {
         "",
     );
     assert_eq!(result.0, 200);
-
     let too_large = "a".repeat(65_537);
     let result = service.handle(
         "POST",
         "/echo",
         &json!({"text": too_large}),
         "",
+    );
+    assert_eq!(result.0, 413);
+}
+
+#[test]
+fn put_text_size_boundary() {
+    let service = Service::default();
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    assert_eq!(login.0, 200);
+    let token = login.1["data"]["token"]
+        .as_str()
+        .unwrap()
+        .to_string();
+
+    let auth = format!("Bearer {}", token);
+    // 65,536 bytes：应该成功
+    let valid_text = "a".repeat(65_536);
+    let result = service.handle(
+        "PUT",
+        "/texts/note",
+        &json!({"text": valid_text}),
+        &auth,
+    );
+    assert_eq!(result.0, 200);
+    // 65,537 bytes：应该返回 413
+    let too_large = "a".repeat(65_537);
+    let result = service.handle(
+        "PUT",
+        "/texts/note2",
+        &json!({"text": too_large}),
+        &auth,
     );
     assert_eq!(result.0, 413);
 }
