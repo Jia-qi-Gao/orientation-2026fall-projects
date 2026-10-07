@@ -7,8 +7,8 @@ use serde_json::{Value, json};
 use sha2::Sha256;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
-use subtle::ConstantTimeEq;
 use std::time::{Duration, Instant};
+use subtle::ConstantTimeEq;
 
 pub const ROUTES: &[(&str, &str)] = &[
     ("GET", "/ping"),
@@ -25,21 +25,16 @@ pub const ROUTES: &[(&str, &str)] = &[
 
 pub fn route_error(method: &str, path: &str) -> Option<u16> {
     if let Some((allowed, _)) = ROUTES.iter().find(|(_, route)| *route == path) {
-        return if *allowed == method {
-            None
-        } else {
-            Some(405)
-        };
+        return if *allowed == method { None } else { Some(405) };
     }
     if let Some(name) = path.strip_prefix("/texts/") {
         if !valid_name(name, 64) {
             return Some(400);
-            }
-            if matches! (method, 
-                "PUT" | "GET" | "DELETE") {
-                return None;
-            }
-            return Some(405);
+        }
+        if matches!(method, "PUT" | "GET" | "DELETE") {
+            return None;
+        }
+        return Some(405);
     }
     Some(404)
 }
@@ -180,7 +175,10 @@ impl Service {
             user.token = Some(token.clone());
             user.tokens_expired_at = expires_at;
             // Later server task: record a deadline and include expires_in.
-        return (200, json!({"data": {"token": token, "expires_in": self.token_ttl_seconds}}));
+            return (
+                200,
+                json!({"data": {"token": token, "expires_in": self.token_ttl_seconds}}),
+            );
         }
         let protected = path == "/texts"
             || path == "/sessions/current"
@@ -243,7 +241,7 @@ impl Service {
                     return error(404, "Not found");
                 };
                 return (200, json!({"data": text}));
-            } 
+            }
             if method == "GET" && path == "/texts" {
                 return (200, json!({"data": user.texts.keys().collect::<Vec<_>>()}));
             }

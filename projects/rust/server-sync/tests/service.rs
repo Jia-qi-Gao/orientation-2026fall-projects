@@ -64,21 +64,13 @@ fn put_text_saves_text_for_user() {
         "username": "alice",
         "password": "password1"
     });
-    assert_eq!(
-        service.handle("POST", "/users", &account, "").0,
-        201
-    );
+    assert_eq!(service.handle("POST", "/users", &account, "").0, 201);
     let login = service.handle("POST", "/sessions", &account, "").1;
     let token = login["data"]["token"].as_str().unwrap();
     let authorization = format!("Bearer {token}");
     let body = json!({"text": "hello rust"});
     assert_eq!(
-        service.handle(
-            "PUT",
-            "/texts/note",
-            &body,
-            &authorization
-        ),
+        service.handle("PUT", "/texts/note", &body, &authorization),
         (200, json!({"data": null}))
     );
 }
@@ -92,16 +84,8 @@ fn get_text_returns_saved_text() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
-    service.handle(
-        "PUT",
-        "/texts/note",
-        &json!({"text": "hello Rust"}),
-        &token,
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
+    service.handle("PUT", "/texts/note", &json!({"text": "hello Rust"}), &token);
     assert_eq!(
         service.handle("GET", "/texts/note", &Value::Null, &token),
         (200, json!({"data": "hello Rust"}))
@@ -117,17 +101,9 @@ fn delete_text_removes_text() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     // 先保存文本
-    service.handle(
-        "PUT",
-        "/texts/note",
-        &json!({"text": "hello Rust"}),
-        &token,
-    );
+    service.handle("PUT", "/texts/note", &json!({"text": "hello Rust"}), &token);
     // 删除文本
     assert_eq!(
         service.handle("DELETE", "/texts/note", &Value::Null, &token),
@@ -159,19 +135,17 @@ fn users_texts_are_isolated() {
         alice_login.1["data"]["token"].as_str().unwrap()
     );
     let bob_login = service.handle("POST", "/sessions", &bob, "");
-    let bob_token = format!(
-        "Bearer {}",
-        bob_login.1["data"]["token"].as_str().unwrap()
-    );
+    let bob_token = format!("Bearer {}", bob_login.1["data"]["token"].as_str().unwrap());
     // Alice 保存 note
     assert_eq!(
-        service.handle(
-            "PUT",
-            "/texts/note",
-            &json!({"text": "Alice's text"}),
-            &alice_token,
-        )
-        .0,
+        service
+            .handle(
+                "PUT",
+                "/texts/note",
+                &json!({"text": "Alice's text"}),
+                &alice_token,
+            )
+            .0,
         200
     );
     // Bob 不应该能读到 Alice 的 note
@@ -181,13 +155,14 @@ fn users_texts_are_isolated() {
     );
     // Bob 保存自己的 note
     assert_eq!(
-        service.handle(
-            "PUT",
-            "/texts/note",
-            &json!({"text": "Bob's text"}),
-            &bob_token,
-        )
-        .0,
+        service
+            .handle(
+                "PUT",
+                "/texts/note",
+                &json!({"text": "Bob's text"}),
+                &bob_token,
+            )
+            .0,
         200
     );
     // Alice 仍然只能读到自己的内容
@@ -202,7 +177,6 @@ fn users_texts_are_isolated() {
     );
 }
 
-
 #[test]
 fn text_list_updates_after_delete() {
     let service = Service::default();
@@ -212,29 +186,11 @@ fn text_list_updates_after_delete() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     // 保存三个文本
-    service.handle(
-        "PUT",
-        "/texts/zebra",
-        &json!({"text": "z"}),
-        &token,
-    );
-    service.handle(
-        "PUT",
-        "/texts/apple",
-        &json!({"text": "a"}),
-        &token,
-    );
-    service.handle(
-        "PUT",
-        "/texts/mango",
-        &json!({"text": "m"}),
-        &token,
-    );
+    service.handle("PUT", "/texts/zebra", &json!({"text": "z"}), &token);
+    service.handle("PUT", "/texts/apple", &json!({"text": "a"}), &token);
+    service.handle("PUT", "/texts/mango", &json!({"text": "m"}), &token);
     // 列表应该按名称升序
     assert_eq!(
         service.handle("GET", "/texts", &Value::Null, &token),
@@ -270,25 +226,15 @@ fn delete_user_clears_account_and_texts() {
         "password": "password1"
     });
     // 注册
-    assert_eq!(
-        service.handle("POST", "/users", &account, "").0,
-        201
-    );
+    assert_eq!(service.handle("POST", "/users", &account, "").0, 201);
     // 登录
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     // 保存文本
     assert_eq!(
-        service.handle(
-            "PUT",
-            "/texts/note",
-            &json!({"text": "hello Rust"}),
-            &token,
-        )
-        .0,
+        service
+            .handle("PUT", "/texts/note", &json!({"text": "hello Rust"}), &token,)
+            .0,
         200
     );
     // 注销
@@ -297,21 +243,12 @@ fn delete_user_clears_account_and_texts() {
         (200, json!({"data": null}))
     );
     // 旧 token 应该失效
-    assert_eq!(
-        service.handle("GET", "/texts", &Value::Null, &token).0,
-        401
-    );
+    assert_eq!(service.handle("GET", "/texts", &Value::Null, &token).0, 401);
     // 同名重新注册应该成功
-    assert_eq!(
-        service.handle("POST", "/users", &account, "").0,
-        201
-    );
+    assert_eq!(service.handle("POST", "/users", &account, "").0, 201);
     // 重新登录
     let login = service.handle("POST", "/sessions", &account, "");
-    let new_token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let new_token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     // 新账号不应该有旧文本
     assert_eq!(
         service.handle("GET", "/texts", &Value::Null, &new_token),
@@ -328,22 +265,13 @@ fn expired_token_is_rejected() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     // 刚登录时应该可以访问
-    assert_eq!(
-        service.handle("GET", "/texts", &Value::Null, &token).0,
-        200
-    );
+    assert_eq!(service.handle("GET", "/texts", &Value::Null, &token).0, 200);
     // 等待 Token 过期
     std::thread::sleep(std::time::Duration::from_secs(2));
     // 过期后应该返回 401
-    assert_eq!(
-        service.handle("GET", "/texts", &Value::Null, &token).0,
-        401
-    );
+    assert_eq!(service.handle("GET", "/texts", &Value::Null, &token).0, 401);
 }
 
 #[test]
@@ -356,19 +284,13 @@ fn expired_token_can_be_replaced_by_login() {
     service.handle("POST", "/users", &account, "");
     // 第一次登录
     let login = service.handle("POST", "/sessions", &account, "");
-    let old_token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let old_token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     // 等待旧 Token 过期
     std::thread::sleep(std::time::Duration::from_secs(2));
     // 重新登录
     let login = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login.0, 200);
-    let new_token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let new_token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     // 新 Token 应该可以使用
     assert_eq!(
         service.handle("GET", "/texts", &Value::Null, &new_token).0,
@@ -380,10 +302,7 @@ fn expired_token_can_be_replaced_by_login() {
         401
     );
     // expires_in 应该存在
-    assert_eq!(
-        login.1["data"]["expires_in"],
-        json!(1)
-    );
+    assert_eq!(login.1["data"]["expires_in"], json!(1));
 }
 
 #[test]
@@ -397,41 +316,32 @@ fn concurrent_text_updates_are_consistent() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     let mut workers = Vec::new();
     for i in 0..4 {
         let service = Arc::clone(&service);
         let token = token.clone();
 
         workers.push(thread::spawn(move || {
-            service.handle(
-                "PUT",
-                "/texts/note",
-                &json!({
-                    "text": format!("text-{i}")
-                }),
-                &token,
-            )
-            .0
+            service
+                .handle(
+                    "PUT",
+                    "/texts/note",
+                    &json!({
+                        "text": format!("text-{i}")
+                    }),
+                    &token,
+                )
+                .0
         }));
     }
     for worker in workers {
         assert_eq!(worker.join().unwrap(), 200);
     }
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &Value::Null,
-        &token,
-    );
+    let result = service.handle("GET", "/texts/note", &Value::Null, &token);
     assert_eq!(result.0, 200);
     let text = result.1["data"].as_str().unwrap();
-    assert!(
-        ["text-0", "text-1", "text-2", "text-3"].contains(&text)
-    );
+    assert!(["text-0", "text-1", "text-2", "text-3"].contains(&text));
 }
 
 #[test]
@@ -444,10 +354,7 @@ fn expired_token_cannot_delete_user() {
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login.0, 200);
-    let token = login.1["data"]["token"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let token = login.1["data"]["token"].as_str().unwrap().to_string();
 
     std::thread::sleep(std::time::Duration::from_secs(2));
     let result = service.handle(
@@ -503,20 +410,10 @@ fn text_name_boundaries() {
 fn echo_text_size_boundary() {
     let service = Service::default();
     let valid_text = "a".repeat(65_536);
-    let result = service.handle(
-        "POST",
-        "/echo",
-        &json!({"text": valid_text}),
-        "",
-    );
+    let result = service.handle("POST", "/echo", &json!({"text": valid_text}), "");
     assert_eq!(result.0, 200);
     let too_large = "a".repeat(65_537);
-    let result = service.handle(
-        "POST",
-        "/echo",
-        &json!({"text": too_large}),
-        "",
-    );
+    let result = service.handle("POST", "/echo", &json!({"text": too_large}), "");
     assert_eq!(result.0, 413);
 }
 
@@ -530,28 +427,15 @@ fn put_text_size_boundary() {
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login.0, 200);
-    let token = login.1["data"]["token"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let token = login.1["data"]["token"].as_str().unwrap().to_string();
 
     let auth = format!("Bearer {}", token);
     // 65,536 bytes：应该成功
     let valid_text = "a".repeat(65_536);
-    let result = service.handle(
-        "PUT",
-        "/texts/note",
-        &json!({"text": valid_text}),
-        &auth,
-    );
+    let result = service.handle("PUT", "/texts/note", &json!({"text": valid_text}), &auth);
     assert_eq!(result.0, 200);
     // 65,537 bytes：应该返回 413
     let too_large = "a".repeat(65_537);
-    let result = service.handle(
-        "PUT",
-        "/texts/note2",
-        &json!({"text": too_large}),
-        &auth,
-    );
+    let result = service.handle("PUT", "/texts/note2", &json!({"text": too_large}), &auth);
     assert_eq!(result.0, 413);
 }
