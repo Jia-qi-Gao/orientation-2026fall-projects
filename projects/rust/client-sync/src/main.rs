@@ -117,7 +117,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if status == 401 {
                     println!("Please log in again.");
                 }
-                if status == 401 || (command == "logout" && status == 200) {
+                if status == 401 || ((command == "logout" || command == "delete-user") && status == 200) {
                     token.clear();
                 }
             }
