@@ -83,6 +83,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 body = json!({"text": text});
                 ("PUT", format!("/texts/{name}"))
             }
+            "get" => {
+                let name = input("text name: ")?;
+                ("GET", format!("/texts/{name}"))
+            }
             _ => {
                 println!("Unknown command.");
                 continue;
