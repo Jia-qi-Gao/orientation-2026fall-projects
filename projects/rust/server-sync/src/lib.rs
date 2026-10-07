@@ -118,6 +118,9 @@ impl Service {
             let Some(text) = body.get("text").and_then(Value::as_str) else {
                 return error(400, "Expected text");
             };
+            if text.len() > 65_536 {
+                return error(413, "Text too large");
+            }
             return (200, json!({"data": text}));
         }
         if method == "POST" && matches!(path, "/users" | "/sessions") {

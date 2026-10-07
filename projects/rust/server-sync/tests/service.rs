@@ -498,3 +498,26 @@ fn text_name_boundaries() {
     let result = service.handle("PUT", "/texts/", &json!({"text": "hello"}), &auth);
     assert_eq!(result.0, 400);
 }
+
+#[test]
+fn echo_text_size_boundary() {
+    let service = Service::default();
+
+    let valid_text = "a".repeat(65_536);
+    let result = service.handle(
+        "POST",
+        "/echo",
+        &json!({"text": valid_text}),
+        "",
+    );
+    assert_eq!(result.0, 200);
+
+    let too_large = "a".repeat(65_537);
+    let result = service.handle(
+        "POST",
+        "/echo",
+        &json!({"text": too_large}),
+        "",
+    );
+    assert_eq!(result.0, 413);
+}
