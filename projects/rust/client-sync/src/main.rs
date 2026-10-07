@@ -87,6 +87,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let name = input("text name: ")?;
                 ("GET", format!("/texts/{name}"))
             }
+            "delete" => {
+                let name = input("text name: ")?;
+                ("DELETE", format!("/texts/{name}"))
+            }
             _ => {
                 println!("Unknown command.");
                 continue;
