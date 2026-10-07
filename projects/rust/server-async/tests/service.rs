@@ -552,43 +552,20 @@ fn text_size_boundaries() {
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login.0, 200);
-    let token = login.1["data"]["token"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let token = login.1["data"]["token"].as_str().unwrap().to_string();
     let auth = format!("Bearer {}", token);
     // 65,536 bytes：应该允许
     let valid_text = "a".repeat(65_536);
-    let result = service.handle(
-        "PUT",
-        "/texts/note",
-        &json!({"text": valid_text}),
-        &auth,
-    );
+    let result = service.handle("PUT", "/texts/note", &json!({"text": valid_text}), &auth);
     assert_eq!(result.0, 200);
     // 65,537 bytes：应该拒绝
     let too_large = "a".repeat(65_537);
-    let result = service.handle(
-        "PUT",
-        "/texts/note2",
-        &json!({"text": too_large}),
-        &auth,
-    );
+    let result = service.handle("PUT", "/texts/note2", &json!({"text": too_large}), &auth);
     assert_eq!(result.0, 413);
     // echo 也应该遵守同样的限制
-    let result = service.handle(
-        "POST",
-        "/echo",
-        &json!({"text": "a".repeat(65_536)}),
-        "",
-    );
+    let result = service.handle("POST", "/echo", &json!({"text": "a".repeat(65_536)}), "");
     assert_eq!(result.0, 200);
-    let result = service.handle(
-        "POST",
-        "/echo",
-        &json!({"text": "a".repeat(65_537)}),
-        "",
-    );
+    let result = service.handle("POST", "/echo", &json!({"text": "a".repeat(65_537)}), "");
     assert_eq!(result.0, 413);
 }
 
@@ -598,21 +575,11 @@ fn unicode_text_size_is_checked_in_bytes() {
     // "é" 在 UTF-8 中占 2 bytes
     let valid_text = "é".repeat(32_768);
     assert_eq!(valid_text.len(), 65_536);
-    let result = service.handle(
-        "POST",
-        "/echo",
-        &json!({"text": valid_text}),
-        "",
-    );
+    let result = service.handle("POST", "/echo", &json!({"text": valid_text}), "");
     assert_eq!(result.0, 200);
     // 32,768 个 "é" + "a" = 65,537 bytes
     let too_large = format!("{}a", "é".repeat(32_768));
     assert_eq!(too_large.len(), 65_537);
-    let result = service.handle(
-        "POST",
-        "/echo",
-        &json!({"text": too_large}),
-        "",
-    );
+    let result = service.handle("POST", "/echo", &json!({"text": too_large}), "");
     assert_eq!(result.0, 413);
 }

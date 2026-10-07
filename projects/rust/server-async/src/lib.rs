@@ -34,10 +34,8 @@ pub fn route_error(method: &str, path: &str) -> Option<u16> {
             }
             Some(404)
         }
-                
     }
 }
-
 
 pub struct User {
     pub salt: [u8; 16],
