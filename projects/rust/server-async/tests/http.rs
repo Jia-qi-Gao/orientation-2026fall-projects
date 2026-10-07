@@ -1,4 +1,4 @@
-use rm_server_async::{http::create_app, Service};
+use rm_server_async::{Service, http::create_app};
 use rocket::http::{ContentType, Header, Status};
 use rocket::local::blocking::Client;
 use serde_json::{Value, json};
@@ -98,7 +98,10 @@ fn http_input_and_routing() {
         Status::BadRequest
     );
     assert_eq!(client.get("/missing").dispatch().status(), Status::NotFound);
-    assert_eq!(client.get("/echo").dispatch().status(), Status::MethodNotAllowed);
+    assert_eq!(
+        client.get("/echo").dispatch().status(),
+        Status::MethodNotAllowed
+    );
     assert_eq!(
         client.patch("/ping").dispatch().status(),
         Status::MethodNotAllowed
@@ -125,10 +128,7 @@ fn unimplemented_routes_are_absent() {
 #[test]
 fn echo_rejects_oversized_body() {
     let client = Client::tracked(create_app(Service::default())).unwrap();
-    let body = format!(
-        "{{\"text\":\"{}\"}}",
-        "a".repeat(524_288)
-    );
+    let body = format!("{{\"text\":\"{}\"}}", "a".repeat(524_288));
     assert_eq!(
         client
             .post("/echo")
@@ -142,8 +142,7 @@ fn echo_rejects_oversized_body() {
 
 #[test]
 fn http_token_expires() {
-    let client =
-        Client::tracked(create_app(Service::new(1))).unwrap();
+    let client = Client::tracked(create_app(Service::new(1))).unwrap();
 
     let account = r#"{"username":"alice","password":"password1"}"#;
     assert_eq!(
@@ -162,27 +161,17 @@ fn http_token_expires() {
         .dispatch()
         .into_json::<Value>()
         .unwrap();
-    assert_eq!(
-        login["data"]["expires_in"].as_u64().unwrap(),
-        1
-    );
+    assert_eq!(login["data"]["expires_in"].as_u64().unwrap(), 1);
     let token = login["data"]["token"].as_str().unwrap();
-    let authorization = Header::new(
-        "Authorization",
-        format!("Bearer {}", token),
-    );
+    let authorization = Header::new("Authorization", format!("Bearer {}", token));
     std::thread::sleep(std::time::Duration::from_secs(2));
-    let response = client
-        .get("/texts")
-        .header(authorization)
-        .dispatch();
+    let response = client.get("/texts").header(authorization).dispatch();
     assert_eq!(response.status(), Status::Unauthorized);
 }
 
 #[test]
 fn http_recovers_after_bad_request() {
-    let client =
-        Client::tracked(create_app(Service::default())).unwrap();
+    let client = Client::tracked(create_app(Service::default())).unwrap();
     // 先发送一个错误的 JSON 请求
     let bad = client
         .post("/users")

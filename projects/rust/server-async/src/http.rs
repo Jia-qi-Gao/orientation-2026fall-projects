@@ -144,4 +144,3 @@ pub fn create_app(service: Service) -> Rocket<Build> {
     .collect();
     rocket::build().attach(ConsoleOutput).mount("/", routes)
 }
-

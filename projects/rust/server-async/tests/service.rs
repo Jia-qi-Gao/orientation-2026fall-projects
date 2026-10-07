@@ -66,12 +66,7 @@ fn echo_returns_same_text() {
 #[test]
 fn echo_rejects_invalid_input() {
     let service = Service::default();
-    let result = service.handle(
-        "POST",
-        "/echo",
-        &serde_json::json!({}),
-        "",
-    );
+    let result = service.handle("POST", "/echo", &serde_json::json!({}), "");
     assert_eq!(result.0, 400);
     let result = service.handle(
         "POST",
@@ -101,16 +96,10 @@ fn put_text_saves_text_for_user() {
         "username": "alice",
         "password": "password1"
     });
-    assert_eq!(
-        service.handle("POST", "/users", &account, "").0,
-        201
-    );
+    assert_eq!(service.handle("POST", "/users", &account, "").0, 201);
     let login = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login.0, 200);
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     let result = service.handle(
         "PUT",
         "/texts/note",
@@ -131,10 +120,7 @@ fn get_text_returns_saved_text() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     service.handle(
         "PUT",
         "/texts/note",
@@ -143,12 +129,7 @@ fn get_text_returns_saved_text() {
         }),
         &token,
     );
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let result = service.handle("GET", "/texts/note", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], "hello rust");
 }
@@ -162,10 +143,7 @@ fn put_text_overwrites_existing_text() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     service.handle(
         "PUT",
         "/texts/note",
@@ -182,12 +160,7 @@ fn put_text_overwrites_existing_text() {
         }),
         &token,
     );
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let result = service.handle("GET", "/texts/note", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], "new text");
 }
@@ -204,12 +177,7 @@ fn text_requires_login() {
         "",
     );
     assert_eq!(result.0, 401);
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &serde_json::Value::Null,
-        "",
-    );
+    let result = service.handle("GET", "/texts/note", &serde_json::Value::Null, "");
     assert_eq!(result.0, 401);
 }
 
@@ -222,16 +190,8 @@ fn get_missing_text_returns_404() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
-    let result = service.handle(
-        "GET",
-        "/texts/missing",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
+    let result = service.handle("GET", "/texts/missing", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 404);
 }
 
@@ -245,10 +205,7 @@ fn delete_text_removes_text() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     service.handle(
         "PUT",
         "/texts/note",
@@ -257,19 +214,9 @@ fn delete_text_removes_text() {
         }),
         &token,
     );
-    let result = service.handle(
-        "DELETE",
-        "/texts/note",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let result = service.handle("DELETE", "/texts/note", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 200);
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let result = service.handle("GET", "/texts/note", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 404);
 }
 
@@ -282,16 +229,8 @@ fn delete_missing_text_returns_404() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
-    let result = service.handle(
-        "DELETE",
-        "/texts/missing",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
+    let result = service.handle("DELETE", "/texts/missing", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 404);
 }
 
@@ -304,10 +243,7 @@ fn text_list_updates_after_delete() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     for name in ["zebra", "apple", "mango"] {
         service.handle(
             "PUT",
@@ -318,34 +254,16 @@ fn text_list_updates_after_delete() {
             &token,
         );
     }
-    let result = service.handle(
-        "GET",
-        "/texts",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let result = service.handle("GET", "/texts", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 200);
     assert_eq!(
         result.1["data"],
         serde_json::json!(["apple", "mango", "zebra"])
     );
-    service.handle(
-        "DELETE",
-        "/texts/mango",
-        &serde_json::Value::Null,
-        &token,
-    );
-    let result = service.handle(
-        "GET",
-        "/texts",
-        &serde_json::Value::Null,
-        &token,
-    );
+    service.handle("DELETE", "/texts/mango", &serde_json::Value::Null, &token);
+    let result = service.handle("GET", "/texts", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 200);
-    assert_eq!(
-        result.1["data"],
-        serde_json::json!(["apple", "zebra"])
-    );
+    assert_eq!(result.1["data"], serde_json::json!(["apple", "zebra"]));
 }
 
 #[test]
@@ -367,10 +285,7 @@ fn users_texts_are_isolated() {
         alice_login.1["data"]["token"].as_str().unwrap()
     );
     let bob_login = service.handle("POST", "/sessions", &bob, "");
-    let bob_token = format!(
-        "Bearer {}",
-        bob_login.1["data"]["token"].as_str().unwrap()
-    );
+    let bob_token = format!("Bearer {}", bob_login.1["data"]["token"].as_str().unwrap());
     service.handle(
         "PUT",
         "/texts/note",
@@ -379,19 +294,9 @@ fn users_texts_are_isolated() {
         }),
         &alice_token,
     );
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &serde_json::Value::Null,
-        &bob_token,
-    );
+    let result = service.handle("GET", "/texts/note", &serde_json::Value::Null, &bob_token);
     assert_eq!(result.0, 404);
-    let result = service.handle(
-        "GET",
-        "/texts",
-        &serde_json::Value::Null,
-        &bob_token,
-    );
+    let result = service.handle("GET", "/texts", &serde_json::Value::Null, &bob_token);
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], serde_json::json!([]));
     service.handle(
@@ -402,12 +307,7 @@ fn users_texts_are_isolated() {
         }),
         &bob_token,
     );
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &serde_json::Value::Null,
-        &alice_token,
-    );
+    let result = service.handle("GET", "/texts/note", &serde_json::Value::Null, &alice_token);
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], "alice text");
 }
@@ -431,10 +331,7 @@ fn deleting_one_users_text_does_not_affect_another() {
         alice_login.1["data"]["token"].as_str().unwrap()
     );
     let bob_login = service.handle("POST", "/sessions", &bob, "");
-    let bob_token = format!(
-        "Bearer {}",
-        bob_login.1["data"]["token"].as_str().unwrap()
-    );
+    let bob_token = format!("Bearer {}", bob_login.1["data"]["token"].as_str().unwrap());
     service.handle(
         "PUT",
         "/texts/note",
@@ -458,12 +355,7 @@ fn deleting_one_users_text_does_not_affect_another() {
         &bob_token,
     );
     assert_eq!(result.0, 200);
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &serde_json::Value::Null,
-        &alice_token,
-    );
+    let result = service.handle("GET", "/texts/note", &serde_json::Value::Null, &alice_token);
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], "alice text");
 }
@@ -477,10 +369,7 @@ fn delete_user_clears_account_and_texts() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     service.handle(
         "PUT",
         "/texts/note",
@@ -489,37 +378,19 @@ fn delete_user_clears_account_and_texts() {
         }),
         &token,
     );
-    let result = service.handle(
-        "DELETE",
-        "/users/me",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let result = service.handle("DELETE", "/users/me", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 200);
     // Old token should no longer work.
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &serde_json::Value::Null,
-        &token,
-    );
+    let result = service.handle("GET", "/texts/note", &serde_json::Value::Null, &token);
     assert_eq!(result.0, 401);
     // Re-register the same username.
     let result = service.handle("POST", "/users", &account, "");
     assert_eq!(result.0, 201);
     let login = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login.0, 200);
-    let new_token = format!(
-        "Bearer {}",
-        login.1["data"]["token"].as_str().unwrap()
-    );
+    let new_token = format!("Bearer {}", login.1["data"]["token"].as_str().unwrap());
     // Old text should be gone.
-    let result = service.handle(
-        "GET",
-        "/texts",
-        &serde_json::Value::Null,
-        &new_token,
-    );
+    let result = service.handle("GET", "/texts", &serde_json::Value::Null, &new_token);
     assert_eq!(result.0, 200);
     assert_eq!(result.1["data"], serde_json::json!([]));
 }
@@ -532,16 +403,9 @@ fn login_returns_expires_in() {
         "password": "password1"
     });
     service.handle("POST", "/users", &account, "");
-    let result = service.handle(
-        "POST",
-        "/sessions",
-        &account,
-        "",
-    );
+    let result = service.handle("POST", "/sessions", &account, "");
     assert_eq!(result.0, 200);
-    let expires_in = result.1["data"]["expires_in"]
-        .as_u64()
-        .unwrap();
+    let expires_in = result.1["data"]["expires_in"].as_u64().unwrap();
     assert!(expires_in > 0);
 }
 
@@ -571,28 +435,15 @@ fn token_does_not_renew_on_access() {
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login.0, 200);
-    let token = login.1["data"]["token"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let token = login.1["data"]["token"].as_str().unwrap().to_string();
 
     // 在 token 过期前访问一次
     std::thread::sleep(std::time::Duration::from_secs(1));
-    let result = service.handle(
-        "GET",
-        "/texts",
-        &json!({}),
-        &format!("Bearer {}", token),
-    );
+    let result = service.handle("GET", "/texts", &json!({}), &format!("Bearer {}", token));
     assert_eq!(result.0, 200);
     // 再等 2 秒，此时原来的 token 应该已经过期
     std::thread::sleep(std::time::Duration::from_secs(2));
-    let result = service.handle(
-        "GET",
-        "/texts",
-        &json!({}),
-        &format!("Bearer {}", token),
-    );
+    let result = service.handle("GET", "/texts", &json!({}), &format!("Bearer {}", token));
     assert_eq!(result.0, 401);
 }
 
@@ -607,34 +458,18 @@ fn relogin_replaces_old_token() {
     // 第一次登录
     let login1 = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login1.0, 200);
-    let token1 = login1.1["data"]["token"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let token1 = login1.1["data"]["token"].as_str().unwrap().to_string();
     // 第二次登录
     let login2 = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login2.0, 200);
-    let token2 = login2.1["data"]["token"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let token2 = login2.1["data"]["token"].as_str().unwrap().to_string();
     // 两次登录得到的 token 应该不同
     assert_ne!(token1, token2);
     // 旧 token 应该失效
-    let old = service.handle(
-        "GET",
-        "/texts",
-        &json!({}),
-        &format!("Bearer {}", token1),
-    );
+    let old = service.handle("GET", "/texts", &json!({}), &format!("Bearer {}", token1));
     assert_eq!(old.0, 401);
     // 新 token 应该可以正常使用
-    let new = service.handle(
-        "GET",
-        "/texts",
-        &json!({}),
-        &format!("Bearer {}", token2),
-    );
+    let new = service.handle("GET", "/texts", &json!({}), &format!("Bearer {}", token2));
     assert_eq!(new.0, 200);
 }
 
@@ -647,10 +482,7 @@ fn text_name_boundaries() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = login.1["data"]["token"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let token = login.1["data"]["token"].as_str().unwrap().to_string();
 
     let auth = format!("Bearer {}", token);
     // 32 个字符：应该允许
@@ -672,20 +504,10 @@ fn text_name_boundaries() {
     );
     assert_eq!(result.0, 404);
     // 包含非法字符：应该拒绝
-    let result = service.handle(
-        "PUT",
-        "/texts/bad/name",
-        &json!({"text": "hello"}),
-        &auth,
-    );
+    let result = service.handle("PUT", "/texts/bad/name", &json!({"text": "hello"}), &auth);
     assert_eq!(result.0, 404);
     // 空名称：应该拒绝
-    let result = service.handle(
-        "PUT",
-        "/texts/",
-        &json!({"text": "hello"}),
-        &auth,
-    );
+    let result = service.handle("PUT", "/texts/", &json!({"text": "hello"}), &auth);
     assert_eq!(result.0, 404);
 }
 
@@ -700,10 +522,7 @@ fn concurrent_text_updates_are_consistent() {
     });
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
-    let token = login.1["data"]["token"]
-        .as_str()
-        .unwrap()
-        .to_string();
+    let token = login.1["data"]["token"].as_str().unwrap().to_string();
     let auth = format!("Bearer {}", token);
     let mut handles = Vec::new();
     for i in 0..4 {
@@ -711,27 +530,15 @@ fn concurrent_text_updates_are_consistent() {
         let auth = auth.clone();
         handles.push(thread::spawn(move || {
             let text = format!("text-{}", i);
-            let result = service.handle(
-                "PUT",
-                "/texts/note",
-                &json!({"text": text}),
-                &auth,
-            );
+            let result = service.handle("PUT", "/texts/note", &json!({"text": text}), &auth);
             assert_eq!(result.0, 200);
         }));
     }
     for handle in handles {
         handle.join().unwrap();
     }
-    let result = service.handle(
-        "GET",
-        "/texts/note",
-        &json!(null),
-        &auth,
-    );
+    let result = service.handle("GET", "/texts/note", &json!(null), &auth);
     assert_eq!(result.0, 200);
     let final_text = result.1["data"].as_str().unwrap();
-    assert!(
-        ["text-0", "text-1", "text-2", "text-3"].contains(&final_text)
-    );
+    assert!(["text-0", "text-1", "text-2", "text-3"].contains(&final_text));
 }

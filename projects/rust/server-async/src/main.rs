@@ -1,5 +1,5 @@
 use clap::Parser;
-use rm_server_async::{http::create_app, Service};
+use rm_server_async::{Service, http::create_app};
 use std::net::SocketAddr;
 
 #[derive(Parser)]

@@ -24,7 +24,7 @@ pub fn route_error(method: &str, path: &str) -> Option<u16> {
         Some(_) => None,
         None => {
             if let Some(name) = path.strip_prefix("/texts/") {
-                if valid_name(name,32) && matches!(method, "PUT" | "GET" | "DELETE") {
+                if valid_name(name, 32) && matches!(method, "PUT" | "GET" | "DELETE") {
                     return None;
                 }
             }
@@ -167,17 +167,20 @@ impl Service {
                 return error(401, "Invalid username or password");
             }
             let token = new_token();
-            let expires_at = 
+            let expires_at =
                 std::time::Instant::now() + std::time::Duration::from_secs(self.token_ttl_seconds);
             user.token = Some(token.clone());
             user.token_expires_at = Some(expires_at);
             // Later server task: record a deadline and include expires_in.
-            return (200, json!({"data": {"token": token, "expires_in": self.token_ttl_seconds}}));
+            return (
+                200,
+                json!({"data": {"token": token, "expires_in": self.token_ttl_seconds}}),
+            );
         }
         let protected = path == "/texts"
-                || path =="/sessions/current"
-                || path == "/users/me"
-                || path.starts_with("/texts/");
+            || path == "/sessions/current"
+            || path == "/users/me"
+            || path.starts_with("/texts/");
         if protected {
             let token = authorization.strip_prefix("Bearer ").unwrap_or("");
             let mut users = self.users.lock().unwrap();
@@ -234,7 +237,7 @@ impl Service {
             }
             if method == "GET" && path == "/texts" {
                 return (200, json!({"data": user.texts.keys().collect::<Vec<_>>()}));
-            }     
+            }
         }
         error(404, "Not found")
     }
