@@ -32,12 +32,14 @@ pub fn route_error(method: &str, path: &str) -> Option<u16> {
         };
     }
     if let Some(name) = path.strip_prefix("/texts/") {
-        if valid_name(name, 32) {
-            return match method {
-                "PUT" | "GET" | "DELETE" => None,
-                _ => Some(405),
-            };
-        }
+        if !valid_name(name, 64) {
+            return Some(400);
+            }
+            if matches! (method, 
+                "PUT" | "GET" | "DELETE") {
+                return None;
+            }
+            return Some(405);
     }
     Some(404)
 }

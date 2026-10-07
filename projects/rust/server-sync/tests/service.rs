@@ -461,3 +461,40 @@ fn expired_token_cannot_delete_user() {
     let login_again = service.handle("POST", "/sessions", &account, "");
     assert_eq!(login_again.0, 200);
 }
+
+#[test]
+fn text_name_boundaries() {
+    let service = Service::default();
+    let account = json!({
+        "username": "alice",
+        "password": "password1"
+    });
+    service.handle("POST", "/users", &account, "");
+    let login = service.handle("POST", "/sessions", &account, "");
+    let token = login.1["data"]["token"].as_str().unwrap().to_string();
+    let auth = format!("Bearer {}", token);
+    // 64 个字符：应该允许
+    let valid_name = "a".repeat(64);
+    let result = service.handle(
+        "PUT",
+        &format!("/texts/{}", valid_name),
+        &json!({"text": "hello"}),
+        &auth,
+    );
+    assert_eq!(result.0, 200);
+    // 65 个字符：应该拒绝
+    let too_long = "a".repeat(65);
+    let result = service.handle(
+        "PUT",
+        &format!("/texts/{}", too_long),
+        &json!({"text": "hello"}),
+        &auth,
+    );
+    assert_eq!(result.0, 400);
+    // 包含非法字符：应该拒绝
+    let result = service.handle("PUT", "/texts/bad/name", &json!({"text": "hello"}), &auth);
+    assert_eq!(result.0, 400);
+    // 空名称：应该拒绝
+    let result = service.handle("PUT", "/texts/", &json!({"text": "hello"}), &auth);
+    assert_eq!(result.0, 400);
+}
