@@ -591,3 +591,28 @@ fn text_size_boundaries() {
     );
     assert_eq!(result.0, 413);
 }
+
+#[test]
+fn unicode_text_size_is_checked_in_bytes() {
+    let service = Service::default();
+    // "é" 在 UTF-8 中占 2 bytes
+    let valid_text = "é".repeat(32_768);
+    assert_eq!(valid_text.len(), 65_536);
+    let result = service.handle(
+        "POST",
+        "/echo",
+        &json!({"text": valid_text}),
+        "",
+    );
+    assert_eq!(result.0, 200);
+    // 32,768 个 "é" + "a" = 65,537 bytes
+    let too_large = format!("{}a", "é".repeat(32_768));
+    assert_eq!(too_large.len(), 65_537);
+    let result = service.handle(
+        "POST",
+        "/echo",
+        &json!({"text": too_large}),
+        "",
+    );
+    assert_eq!(result.0, 413);
+}
