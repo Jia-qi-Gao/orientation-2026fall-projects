@@ -483,10 +483,9 @@ fn text_name_boundaries() {
     service.handle("POST", "/users", &account, "");
     let login = service.handle("POST", "/sessions", &account, "");
     let token = login.1["data"]["token"].as_str().unwrap().to_string();
-
     let auth = format!("Bearer {}", token);
-    // 32 个字符：应该允许
-    let valid_name = "a".repeat(32);
+    // 64 个字符：应该允许
+    let valid_name = "a".repeat(64);
     let result = service.handle(
         "PUT",
         &format!("/texts/{}", valid_name),
@@ -494,21 +493,21 @@ fn text_name_boundaries() {
         &auth,
     );
     assert_eq!(result.0, 200);
-    // 33 个字符：应该拒绝
-    let too_long = "a".repeat(33);
+    // 65 个字符：应该拒绝
+    let too_long = "a".repeat(65);
     let result = service.handle(
         "PUT",
         &format!("/texts/{}", too_long),
         &json!({"text": "hello"}),
         &auth,
     );
-    assert_eq!(result.0, 404);
+    assert_eq!(result.0, 400);
     // 包含非法字符：应该拒绝
     let result = service.handle("PUT", "/texts/bad/name", &json!({"text": "hello"}), &auth);
-    assert_eq!(result.0, 404);
+    assert_eq!(result.0, 400);
     // 空名称：应该拒绝
     let result = service.handle("PUT", "/texts/", &json!({"text": "hello"}), &auth);
-    assert_eq!(result.0, 404);
+    assert_eq!(result.0, 400);
 }
 
 #[test]

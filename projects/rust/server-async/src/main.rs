@@ -6,7 +6,7 @@ use std::net::SocketAddr;
 struct Args {
     #[arg(long, default_value = "127.0.0.1:7878")]
     address: SocketAddr,
-    #[arg(long, default_value_t = 3600)]
+    #[arg(long, default_value_t = 300)]
     token_ttl_seconds: u64,
 }
 

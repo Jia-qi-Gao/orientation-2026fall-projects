@@ -24,14 +24,20 @@ pub fn route_error(method: &str, path: &str) -> Option<u16> {
         Some(_) => None,
         None => {
             if let Some(name) = path.strip_prefix("/texts/") {
-                if valid_name(name, 32) && matches!(method, "PUT" | "GET" | "DELETE") {
+                if !valid_name(name, 64) {
+                    return Some(400);
+                }
+                if matches!(method, "PUT" | "GET" | "DELETE") {
                     return None;
                 }
+                return Some(405);
             }
             Some(404)
         }
+                
     }
 }
+
 
 pub struct User {
     pub salt: [u8; 16],
@@ -57,7 +63,7 @@ impl Service {
 
 impl Default for Service {
     fn default() -> Self {
-        Self::new(3600)
+        Self::new(300)
     }
 }
 
@@ -116,6 +122,9 @@ impl Service {
             let Some(text) = object.get("text").and_then(Value::as_str) else {
                 return error(400, "Expected text");
             };
+            if text.len() > 65_536 {
+                return error(413, "Text too large");
+            }
             return (200, json!({"data": text}));
         }
         if method == "POST" && matches!(path, "/users" | "/sessions") {
@@ -214,6 +223,9 @@ impl Service {
                 let Some(text) = body.get("text").and_then(Value::as_str) else {
                     return error(400, "Expected text");
                 };
+                if text.len() > 65_536 {
+                    return error(413, "Text too large");
+                }
                 user.texts.insert(name.to_string(), text.to_string());
                 return (200, json!({"data": null}));
             }
